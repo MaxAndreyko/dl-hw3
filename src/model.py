@@ -27,7 +27,6 @@ class LanguageModel(nn.Module):
             embedding_dim=embed_size,
             padding_idx=dataset.pad_id
         )
-
         self.rnn = rnn_type(
             input_size=embed_size,
             hidden_size=hidden_size,
@@ -53,7 +52,7 @@ class LanguageModel(nn.Module):
         return logits
 
     @torch.inference_mode()
-    def inference(self, prefix: str = '', temp: float = 1.) -> str:  # FIX: а зачем temp?
+    def inference(self, prefix: str = '') -> str:
         """
         Generate new text with an optional prefix
         :param prefix: prefix to start generation
