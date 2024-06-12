@@ -5,3 +5,4 @@ seaborn
 sentencepiece
 tqdm
 ipywidgets
+scikit-learn
