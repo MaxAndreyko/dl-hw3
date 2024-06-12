@@ -101,7 +101,7 @@ def validation_epoch(model: LanguageModel, criterion: nn.Module,
 
 
 def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Optional[Any],
-          train_loader: DataLoader, val_loader: DataLoader, num_epochs: int, num_examples=5):
+          train_loader: DataLoader, val_loader: DataLoader, num_epochs: int, device, num_examples=5):
     """
     Train language model for several epochs
     :param model: language model to train
@@ -114,7 +114,7 @@ def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Opt
     """
     train_losses, val_losses = [], []
     criterion = nn.CrossEntropyLoss(ignore_index=train_loader.dataset.pad_id)
-
+    model = model.to(device)
     for epoch in range(1, num_epochs + 1):
         train_loss = training_epoch(
             model, optimizer, criterion, train_loader,
@@ -131,8 +131,4 @@ def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Opt
         train_losses += [train_loss]
         val_losses += [val_loss]
         plot_losses(train_losses, val_losses)
-
-        print('Generation examples:')
-        for _ in range(num_examples):
-            print(model.inference())
 
