@@ -52,7 +52,7 @@ class LanguageModel(nn.Module):
         return logits
 
     @torch.inference_mode()
-    def inference(self, prefix: str = '') -> str:
+    def inference(self, prefix: str = '', temp: float = 0.1) -> str:
         """
         Generate new text with an optional prefix
         :param prefix: prefix to start generation
@@ -68,7 +68,7 @@ class LanguageModel(nn.Module):
         if embeds.numel() != 0: # FIX: чтобы пройти тест с пустой строкой просто добавил проверку на пустой тензор
             output, hidden = self.rnn(embeds)
 
-            new_tokens = Categorical(logits=self.linear(output[:, -1])).sample()
+            new_tokens = Categorical(logits=self.linear(output[:, -1]) / temp).sample()
             tokens = torch.cat([tokens, new_tokens.unsqueeze(0)], dim=1)
 
             while tokens.shape[1] < self.max_length:
