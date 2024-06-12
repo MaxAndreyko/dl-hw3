@@ -11,8 +11,8 @@ class TextDataset(Dataset):
     VAL_RATIO = 0.05
 
     def __init__(self, data_file: str, train: bool = True, sp_model_prefix: str = None,
-                 vocab_size: int = 2000, normalization_rule_name: str = 'nmt_nfkc_cf',
-                 model_type: str = 'bpe', max_length: int = 256, pad_id: int = 3):
+                 vocab_size: int = 2000, normalization_rule_name: str = "nmt_nfkc_cf",
+                 model_type: str = "bpe", max_length: int = 256, pad_id: int = 3):
         """
         Dataset with texts, supporting BPE tokenizer
         :param data_file: txt file containing texts
@@ -23,7 +23,7 @@ class TextDataset(Dataset):
         :param model_type: sentencepiece tokenizer model type
         :param max_length: maximal length of text in tokens
         """
-        if not os.path.isfile(sp_model_prefix + '.model'):
+        if not os.path.isfile(sp_model_prefix + ".model"):
             # train tokenizer if not trained yet
             SentencePieceTrainer.train(
                 input=data_file, vocab_size=vocab_size,
@@ -31,7 +31,7 @@ class TextDataset(Dataset):
                 normalization_rule_name=normalization_rule_name, pad_id=pad_id
             )
         # load tokenizer from file
-        self.sp_model = SentencePieceProcessor(model_file=sp_model_prefix + '.model')
+        self.sp_model = SentencePieceProcessor(model_file=sp_model_prefix + ".model")
 
         with open(data_file, encoding="utf-8") as file:
             texts = file.readlines()
@@ -69,7 +69,7 @@ class TextDataset(Dataset):
         :return: decoded texts
         """
         if torch.is_tensor(ids):
-            assert len(ids.shape) <= 2, 'Expected tensor of shape (length, ) or (batch_size, length)'
+            assert len(ids.shape) <= 2, "Expected tensor of shape (length, ) or (batch_size, length)"
             ids = ids.cpu().tolist()
 
         return self.sp_model.decode(ids)
