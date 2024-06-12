@@ -33,7 +33,7 @@ class TextDataset(Dataset):
         # load tokenizer from file
         self.sp_model = SentencePieceProcessor(model_file=sp_model_prefix + '.model')
 
-        with open(data_file, encoding='utf-8') as file:
+        with open(data_file, encoding="utf-8") as file:
             texts = file.readlines()
 
         # Включаем разделение на обучающую и валидационную выборки в методе __init__
