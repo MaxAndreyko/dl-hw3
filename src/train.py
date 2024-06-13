@@ -1,16 +1,17 @@
-import torch
-import seaborn as sns
+from typing import Any, List, Optional
+
 import matplotlib.pyplot as plt
-from typing import List, Optional, Any
+import seaborn as sns
+import torch
+from IPython.display import clear_output
 from torch import nn
 from torch.utils.data import DataLoader
-from IPython.display import clear_output
 from tqdm.notebook import tqdm
+
 from src.model import LanguageModel
 
-
-sns.set_style('whitegrid')
-plt.rcParams.update({'font.size': 15})
+sns.set_style("whitegrid")
+plt.rcParams.update({"font.size": 15})
 
 
 def plot_losses(train_losses: List[float], val_losses: List[float]):
@@ -21,27 +22,34 @@ def plot_losses(train_losses: List[float], val_losses: List[float]):
     """
     clear_output()
     fig, axs = plt.subplots(1, 2, figsize=(13, 4))
-    axs[0].plot(range(1, len(train_losses) + 1), train_losses, label='train')
-    axs[0].plot(range(1, len(val_losses) + 1), val_losses, label='val')
-    axs[0].set_ylabel('loss')
+    axs[0].plot(range(1, len(train_losses) + 1), train_losses, label="train")
+    axs[0].plot(range(1, len(val_losses) + 1), val_losses, label="val")
+    axs[0].set_ylabel("loss")
 
     # Calculate train and validation perplexities given lists of losses
     train_perplexities = [torch.exp(torch.tensor(loss)).item() for loss in train_losses]
     val_perplexities = [torch.exp(torch.tensor(loss)).item() for loss in val_losses]
 
-    axs[1].plot(range(1, len(train_perplexities) + 1), train_perplexities, label='train')
-    axs[1].plot(range(1, len(val_perplexities) + 1), val_perplexities, label='val')
-    axs[1].set_ylabel('perplexity')
+    axs[1].plot(
+        range(1, len(train_perplexities) + 1), train_perplexities, label="train"
+    )
+    axs[1].plot(range(1, len(val_perplexities) + 1), val_perplexities, label="val")
+    axs[1].set_ylabel("perplexity")
 
     for ax in axs:
-        ax.set_xlabel('epoch')
+        ax.set_xlabel("epoch")
         ax.legend()
 
     plt.show()
 
 
-def training_epoch(model: LanguageModel, optimizer: torch.optim.Optimizer, criterion: nn.Module,
-                   loader: DataLoader, tqdm_desc: str):
+def training_epoch(
+    model: LanguageModel,
+    optimizer: torch.optim.Optimizer,
+    criterion: nn.Module,
+    loader: DataLoader,
+    tqdm_desc: str,
+):
     """
     Process one training epoch
     :param model: language model to train
@@ -56,26 +64,28 @@ def training_epoch(model: LanguageModel, optimizer: torch.optim.Optimizer, crite
 
     model.train()
     for indices, lengths in tqdm(loader, desc=tqdm_desc):
-        # Process one training step: calculate loss,
-        # call backward and make one optimizer step.
-        # Accumulate sum of losses for different batches in train_loss
-        optimizer.zero_grad()
-        indices = indices[:, :lengths.max()].to(device)
-        logits = model(indices[:, :-1], lengths - 1)
-        # logits: (B, L, V), tokens: (B, L) - need to transpose logits
-        loss = criterion(logits.transpose(1, 2), indices[:, 1:])
-        loss.backward()
-        optimizer.step()
+        with optimizer.zero_grad():
 
-        train_loss += loss.item() * indices.shape[0]
+            # Process one training step: calculate loss
+            indices = indices[:, : lengths.max()].to(device)
+            logits = model(indices[:, :-1], lengths - 1)
+            loss = criterion(logits.transpose(1, 2), indices[:, 1:])
+
+            # Call backward and make one optimizer step.
+            loss.backward()
+            optimizer.step()
+
+            # Accumulate sum of losses for different batches in train_loss
+            train_loss += loss.item() * indices.shape[0]
 
     train_loss /= len(loader.dataset)
     return train_loss
 
 
 @torch.no_grad()
-def validation_epoch(model: LanguageModel, criterion: nn.Module,
-                     loader: DataLoader, tqdm_desc: str):
+def validation_epoch(
+    model: LanguageModel, criterion: nn.Module, loader: DataLoader, tqdm_desc: str
+):
     """
     Process one validation epoch
     :param model: language model to validate
@@ -89,19 +99,29 @@ def validation_epoch(model: LanguageModel, criterion: nn.Module,
 
     model.eval()
     for indices, lengths in tqdm(loader, desc=tqdm_desc):
+
         # Process one validation step: calculate loss.
-        # Accumulate sum of losses for different batches in val_loss
-        indices = indices[:, :lengths.max()].to(device)
+        indices = indices[:, : lengths.max()].to(device)
         logits = model(indices[:, :-1], lengths - 1).to(device)
         loss = criterion(logits.transpose(1, 2), indices[:, 1:])
+
+        # Accumulate sum of losses for different batches in val_loss
         val_loss += loss.item() * indices.shape[0]
 
     val_loss /= len(loader.dataset)
     return val_loss
 
 
-def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Optional[Any],
-          train_loader: DataLoader, val_loader: DataLoader, num_epochs: int, device, num_examples=5):
+def train(
+    model: LanguageModel,
+    optimizer: torch.optim.Optimizer,
+    scheduler: Optional[Any],
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    num_epochs: int,
+    device,
+    num_examples=5,
+):
     """
     Train language model for several epochs
     :param model: language model to train
@@ -117,12 +137,14 @@ def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Opt
     model = model.to(device)
     for epoch in range(1, num_epochs + 1):
         train_loss = training_epoch(
-            model, optimizer, criterion, train_loader,
-            tqdm_desc=f'Training {epoch}/{num_epochs}'
+            model,
+            optimizer,
+            criterion,
+            train_loader,
+            tqdm_desc=f"Training {epoch}/{num_epochs}",
         )
         val_loss = validation_epoch(
-            model, criterion, val_loader,
-            tqdm_desc=f'Validating {epoch}/{num_epochs}'
+            model, criterion, val_loader, tqdm_desc=f"Validating {epoch}/{num_epochs}"
         )
 
         if scheduler is not None:
@@ -131,4 +153,3 @@ def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Opt
         train_losses += [train_loss]
         val_losses += [val_loss]
         plot_losses(train_losses, val_losses)
-
